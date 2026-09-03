@@ -28,8 +28,9 @@ unset($_SESSION['reopen_teacher_id']);
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
-  <link rel="stylesheet" href="../assets/css/theme.css">
-  <link rel="stylesheet" href="../assets/css/dashboard.css">
+  <link rel="stylesheet" href="../assets/css/theme.css?v=<?= filemtime(__DIR__ . '/../assets/css/theme.css') ?>">
+  <link rel="stylesheet" href="../assets/css/dashboard.css?v=<?= filemtime(__DIR__ . '/../assets/css/dashboard.css') ?>">
+  <link rel="stylesheet" href="../assets/css/chatbot.css?v=<?= filemtime(__DIR__ . '/../assets/css/chatbot.css') ?>">
 </head>
 <body>
 
@@ -209,12 +210,16 @@ unset($_SESSION['reopen_teacher_id']);
     </div>
   </div>
 
+  <?php include __DIR__ . '/../includes/chatbot_widget.php'; ?>
+
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
   <script src="../assets/js/theme.js"></script>
   <script>
     window.REOPEN_TEACHER_ID = <?= $reopenTeacherId !== null ? (int) $reopenTeacherId : 'null' ?>;
+    window.DIFY_CHAT_ENDPOINT = '../includes/dify_chat.php';
   </script>
   <script src="../assets/js/admin.js"></script>
+  <script src="../assets/js/chatbot.js"></script>
   <?php if (!empty($_SESSION['reopen_modal'])): unset($_SESSION['reopen_modal']); ?>
   <script>
     document.addEventListener('DOMContentLoaded', () => {

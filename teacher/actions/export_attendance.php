@@ -8,8 +8,12 @@ use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 
 $subjectId = (int) ($_GET['subject_id'] ?? 0);
+$dateFilter = $_GET['date'] ?? '';
+if ($dateFilter !== '' && !preg_match('/^\d{4}-\d{2}-\d{2}$/', $dateFilter)) {
+    $dateFilter = '';
+}
 
-$stmt = $pdo->prepare('SELECT * FROM subjects WHERE id = ? AND teacher_id = ?');
+$stmt = $pdo->prepare('SELECT * FROM subjects WHERE id = ? AND teacher_id = ? AND is_deleted = 0');
 $stmt->execute([$subjectId, $_SESSION['user_id']]);
 $subject = $stmt->fetch();
 
@@ -18,15 +22,24 @@ if (!$subject) {
     exit('Subject not found.');
 }
 
-$records = $pdo->prepare('SELECT student_number, surname, scanned_at FROM attendance WHERE subject_id = ? ORDER BY scanned_at ASC');
-$records->execute([$subjectId]);
+$sql = 'SELECT student_number, surname, scanned_at FROM attendance WHERE subject_id = ?';
+$params = [$subjectId];
+if ($dateFilter !== '') {
+    $sql .= ' AND DATE(scanned_at) = ?';
+    $params[] = $dateFilter;
+}
+$sql .= ' ORDER BY scanned_at ASC';
+
+$records = $pdo->prepare($sql);
+$records->execute($params);
 $rows = $records->fetchAll();
 
 $spreadsheet = new Spreadsheet();
 $sheet = $spreadsheet->getActiveSheet();
 $sheet->setTitle('Attendance');
 
-$sheet->setCellValue('A1', 'Attendance for ' . $subject['subject_code'] . ' - ' . $subject['subject_name'] . ' (' . $subject['section'] . ')');
+$titleSuffix = $dateFilter !== '' ? ' on ' . date('F j, Y', strtotime($dateFilter)) : '';
+$sheet->setCellValue('A1', 'Attendance for ' . $subject['subject_code'] . ' - ' . $subject['subject_name'] . ' (' . $subject['section'] . ')' . $titleSuffix);
 $sheet->mergeCells('A1:D1');
 $sheet->getStyle('A1')->getFont()->setBold(true)->setSize(14);
 
@@ -51,7 +64,8 @@ foreach (['A', 'B', 'C', 'D'] as $col) {
     $sheet->getColumnDimension($col)->setAutoSize(true);
 }
 
-$fileName = preg_replace('/[^A-Za-z0-9_-]+/', '_', $subject['subject_code']) . '_attendance.xlsx';
+$fileNameDateSuffix = $dateFilter !== '' ? '_' . $dateFilter : '';
+$fileName = preg_replace('/[^A-Za-z0-9_-]+/', '_', $subject['subject_code']) . '_attendance' . $fileNameDateSuffix . '.xlsx';
 
 header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
 header('Content-Disposition: attachment;filename="' . $fileName . '"');

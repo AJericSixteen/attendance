@@ -1,10 +1,13 @@
 <?php
 
-$host = 'localhost';
-$db   = 'attendance_system';
-$user = 'root';
-$pass = 'admin123';
-$charset = 'utf8mb4';
+require __DIR__ . '/../includes/env.php';
+load_env(__DIR__ . '/../.env');
+
+$host    = env('DB_HOST', 'localhost');
+$db      = env('DB_NAME', 'attendance_system');
+$user    = env('DB_USER', 'root');
+$pass    = env('DB_PASS', '');
+$charset = env('DB_CHARSET', 'utf8mb4');
 
 $dsn = "mysql:host=$host;dbname=$db;charset=$charset";
 $options = [
@@ -16,5 +19,5 @@ $options = [
 try {
     $pdo = new PDO($dsn, $user, $pass, $options);
 } catch (PDOException $e) {
-    die('Database connection failed. Have you imported database.sql? (' . $e->getMessage() . ')');
+    die('Database connection failed. Have you imported database.sql and set up .env? (' . $e->getMessage() . ')');
 }

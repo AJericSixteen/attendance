@@ -16,11 +16,19 @@ if ($subjectId <= 0 || $qrText === '') {
     exit;
 }
 
-$stmt = $pdo->prepare('SELECT id FROM subjects WHERE id = ? AND teacher_id = ?');
+$stmt = $pdo->prepare('SELECT id, is_active FROM subjects WHERE id = ? AND teacher_id = ? AND is_deleted = 0');
 $stmt->execute([$subjectId, $_SESSION['user_id']]);
-if (!$stmt->fetch()) {
+$subject = $stmt->fetch();
+
+if (!$subject) {
     http_response_code(403);
     echo json_encode(['success' => false, 'message' => 'You do not have access to this subject.']);
+    exit;
+}
+
+if (!$subject['is_active']) {
+    http_response_code(403);
+    echo json_encode(['success' => false, 'message' => 'This subject is deactivated. Reactivate it to record new attendance.']);
     exit;
 }
 

@@ -7,7 +7,7 @@ header('Content-Type: application/json');
 
 $subjectId = (int) ($_GET['id'] ?? 0);
 
-$stmt = $pdo->prepare('SELECT id, subject_code, subject_name, section, created_at FROM subjects WHERE id = ? AND teacher_id = ?');
+$stmt = $pdo->prepare('SELECT id, subject_code, subject_name, section, is_active, created_at FROM subjects WHERE id = ? AND teacher_id = ? AND is_deleted = 0');
 $stmt->execute([$subjectId, $_SESSION['user_id']]);
 $subject = $stmt->fetch();
 

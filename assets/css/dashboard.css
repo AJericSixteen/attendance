@@ -101,13 +101,13 @@ body {
   border-radius: 10px;
   font-weight: 600;
   font-size: 14px;
-  box-shadow: 0 10px 20px rgba(108, 92, 231, 0.28);
+  box-shadow: 0 10px 20px rgba(37, 99, 235, 0.28);
   transition: transform 0.15s ease, box-shadow 0.15s ease;
 }
 
 .btn-primary-gradient:hover {
   transform: translateY(-2px);
-  box-shadow: 0 14px 26px rgba(108, 92, 231, 0.38);
+  box-shadow: 0 14px 26px rgba(37, 99, 235, 0.38);
   color: #ffffff;
 }
 
@@ -119,6 +119,7 @@ body {
 }
 
 .entity-card {
+  position: relative;
   background: var(--card-surface);
   border-radius: 18px;
   overflow: hidden;
@@ -133,6 +134,35 @@ body {
 .entity-card:hover {
   transform: translateY(-6px);
   box-shadow: var(--shadow-lg);
+}
+
+.entity-card:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+.manage-subject-btn {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 2;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(0, 0, 0, 0.35);
+  color: #ffffff;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.15s ease, transform 0.15s ease;
+}
+
+.manage-subject-btn:hover {
+  background: rgba(0, 0, 0, 0.55);
+  transform: scale(1.08);
 }
 
 .entity-card .card-username {
@@ -240,6 +270,46 @@ body {
 
 .modal-header .btn-close {
   filter: invert(1);
+}
+
+.export-date-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  background: var(--surface-2);
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.export-date-group:hover {
+  border-color: var(--primary);
+  background: var(--primary-soft);
+}
+
+.export-date-group label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-muted);
+  margin: 0;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.export-date-group input[type="date"] {
+  border: none;
+  background: transparent;
+  color: var(--text);
+  font-size: 13px;
+  padding: 0;
+  max-width: 125px;
+  cursor: pointer;
+}
+
+.export-date-group input[type="date"]:focus {
+  outline: none;
 }
 
 .modal-footer {

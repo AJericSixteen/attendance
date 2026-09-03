@@ -44,16 +44,28 @@ mysql -u root -p < database.sql
   "C:\laragon\bin\mysql\mysql-8.4.3-winx64\bin\mysql.exe" -u root -p < database.sql
   ```
 
-### 4. Configure the database connection
+### 4. Configure the app
 
-Open [config/db.php](config/db.php) and make sure the credentials match your MySQL setup:
+Copy [.env.example](.env.example) to `.env` and fill in your MySQL credentials:
 
-```php
-$host = 'localhost';
-$db   = 'attendance_system';
-$user = 'root';
-$pass = '';        // set this to your MySQL root password
+```bash
+cp .env.example .env
 ```
+
+```env
+DB_HOST=localhost
+DB_NAME=attendance_system
+DB_USER=root
+DB_PASS=        # set this to your MySQL root password
+DB_CHARSET=utf8mb4
+
+DIFY_API_KEY=            # optional, powers the "Help Assistant" chat widget
+DIFY_API_BASE_URL=https://api.dify.ai/v1
+```
+
+`.env` is gitignored — it holds real credentials and is never committed. `config/db.php` and `config/dify.php` just read from it.
+
+The `DIFY_API_KEY` is optional: it enables the floating help-chat widget (bottom-right on every page) so teachers can ask questions about the system. Leave it blank to disable the chatbot. See [dify/attendance-help-assistant.yml](dify/attendance-help-assistant.yml) for a ready-to-import Dify app pre-loaded with this system's teacher workflows.
 
 ### 5. Start Laragon (Apache + MySQL)
 
@@ -88,12 +100,13 @@ From there:
 
 ## Re-running setup later (e.g. after a fresh `git pull`)
 
-Only two things are ever missing after a fresh checkout — repeat steps 2 and (if the database doesn't exist yet) 3:
+Only a few things are ever missing after a fresh checkout — repeat steps 2, 3, and 4:
 
 ```bash
 cd C:\laragon\www\attendance
 composer install
 mysql -u root -p < database.sql
+cp .env.example .env   # then fill in your credentials
 ```
 
 `database.sql` uses `CREATE DATABASE IF NOT EXISTS` and `INSERT ... ON DUPLICATE KEY UPDATE`, so re-running it against an existing database will not wipe your data — it only creates what's missing.

@@ -28,8 +28,9 @@ unset($_SESSION['login_error']);
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
-  <link rel="stylesheet" href="assets/css/theme.css">
-  <link rel="stylesheet" href="css/login.css">
+  <link rel="stylesheet" href="assets/css/theme.css?v=<?= filemtime(__DIR__ . '/assets/css/theme.css') ?>">
+  <link rel="stylesheet" href="css/login.css?v=<?= filemtime(__DIR__ . '/css/login.css') ?>">
+  <link rel="stylesheet" href="assets/css/chatbot.css?v=<?= filemtime(__DIR__ . '/assets/css/chatbot.css') ?>">
 </head>
 <body>
 
@@ -87,7 +88,13 @@ unset($_SESSION['login_error']);
     </section>
   </main>
 
+  <?php include __DIR__ . '/includes/chatbot_widget.php'; ?>
+
   <script src="assets/js/theme.js"></script>
+  <script>
+    window.DIFY_CHAT_ENDPOINT = 'includes/dify_chat.php';
+  </script>
+  <script src="assets/js/chatbot.js"></script>
   <script>
     const toggleBtn = document.querySelector('.toggle-password');
     const passwordInput = document.getElementById('password');

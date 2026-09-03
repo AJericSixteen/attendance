@@ -2,20 +2,39 @@ document.addEventListener('DOMContentLoaded', () => {
   const attendanceModalEl = document.getElementById('attendanceModal');
   const attendanceModal   = new bootstrap.Modal(attendanceModalEl);
 
+  const manageSubjectModalEl = document.getElementById('manageSubjectModal');
+  const manageSubjectModal   = new bootstrap.Modal(manageSubjectModalEl);
+
   const video          = document.getElementById('cameraVideo');
   const canvas          = document.getElementById('cameraCanvas');
   const cameraError      = document.getElementById('cameraError');
   const cameraOffMessage = document.getElementById('cameraOffMessage');
   const cameraToggleBtn  = document.getElementById('cameraToggleBtn');
+  const cameraColumn     = document.getElementById('cameraColumn');
   const scanStatus      = document.getElementById('scanStatus');
   const tableBody        = document.getElementById('attendanceTableBody');
   const exportBtn        = document.getElementById('exportBtn');
+  const exportDateFilter = document.getElementById('exportDateFilter');
+  const exportDateGroup  = document.getElementById('exportDateGroup');
   const modalTitle       = document.getElementById('attendanceModalTitle');
   const manualEntryBtn   = document.getElementById('manualEntryBtn');
   const manualEntrySection = document.getElementById('manualEntrySection');
   const manualStudentNumber = document.getElementById('manualStudentNumber');
   const manualSurname    = document.getElementById('manualSurname');
   const manualSaveBtn    = document.getElementById('manualSaveBtn');
+  const inactiveSubjectNotice = document.getElementById('inactiveSubjectNotice');
+
+  const manageSubjectStatusBadge = document.getElementById('manageSubjectStatusBadge');
+  const editSubjectId   = document.getElementById('editSubjectId');
+  const editSubjectCode = document.getElementById('editSubjectCode');
+  const editSubjectName = document.getElementById('editSubjectName');
+  const editSection     = document.getElementById('editSection');
+  const activateSubjectSection   = document.getElementById('activateSubjectSection');
+  const activateSubjectId        = document.getElementById('activateSubjectId');
+  const deactivateSubjectSection = document.getElementById('deactivateSubjectSection');
+  const deactivateSubjectId      = document.getElementById('deactivateSubjectId');
+  const deleteSubjectZone = document.getElementById('deleteSubjectZone');
+  const deleteSubjectId   = document.getElementById('deleteSubjectId');
 
   let currentSubjectId = null;
   let currentCard = null;
@@ -157,26 +176,92 @@ document.addEventListener('DOMContentLoaded', () => {
       });
   }
 
-  document.querySelectorAll('.subject-card').forEach((card) => {
-    card.addEventListener('click', () => {
-      const subjectId = card.dataset.subjectId;
-      currentSubjectId = subjectId;
-      currentCard = card;
-      currentScanCount = 0;
-      modalTitle.textContent = 'Loading...';
-      tableBody.innerHTML = '<tr><td colspan="3" class="text-muted">Loading...</td></tr>';
-      exportBtn.href = `actions/export_attendance.php?subject_id=${subjectId}`;
-      attendanceModal.show();
+  function updateExportHref() {
+    let href = `actions/export_attendance.php?subject_id=${currentSubjectId}`;
+    if (exportDateFilter.value) {
+      href += `&date=${exportDateFilter.value}`;
+    }
+    exportBtn.href = href;
+  }
 
-      fetch(`actions/get_attendance.php?id=${subjectId}`)
-        .then((res) => res.json())
-        .then((data) => {
-          if (!data.success) return;
-          modalTitle.textContent = `${data.subject.subject_code} - ${data.subject.subject_name} (${data.subject.section})`;
-          currentScanCount = data.records.length;
-          renderTable(data.records);
-        });
+  function openAttendanceModal(card) {
+    const subjectId = card.dataset.subjectId;
+    const isActive = card.dataset.active === '1';
+
+    currentSubjectId = subjectId;
+    currentCard = card;
+    currentScanCount = 0;
+    modalTitle.textContent = 'Loading...';
+    tableBody.innerHTML = '<tr><td colspan="3" class="text-muted">Loading...</td></tr>';
+    exportDateFilter.value = '';
+    updateExportHref();
+
+    inactiveSubjectNotice.classList.toggle('d-none', isActive);
+    cameraColumn.classList.toggle('d-none', !isActive);
+    manualEntryBtn.classList.toggle('d-none', !isActive);
+
+    attendanceModal.show();
+
+    fetch(`actions/get_attendance.php?id=${subjectId}`)
+      .then((res) => res.json())
+      .then((data) => {
+        if (!data.success) return;
+        modalTitle.textContent = `${data.subject.subject_code} - ${data.subject.subject_name} (${data.subject.section})`;
+        currentScanCount = data.records.length;
+        renderTable(data.records);
+      });
+  }
+
+  function openManageSubjectModal(card) {
+    const { subjectId, subjectCode, subjectName, section, active } = card.dataset;
+    const isActive = active === '1';
+
+    editSubjectId.value = subjectId;
+    editSubjectCode.value = subjectCode;
+    editSubjectName.value = subjectName;
+    editSection.value = section;
+
+    manageSubjectStatusBadge.textContent = isActive ? 'Active' : 'Deactivated';
+    manageSubjectStatusBadge.className = `status-badge ${isActive ? 'status-badge--active' : 'status-badge--inactive'}`;
+
+    activateSubjectId.value = subjectId;
+    deactivateSubjectId.value = subjectId;
+    deleteSubjectId.value = subjectId;
+
+    activateSubjectSection.classList.toggle('d-none', isActive);
+    deactivateSubjectSection.classList.toggle('d-none', !isActive);
+    deleteSubjectZone.classList.toggle('d-none', isActive);
+
+    manageSubjectModal.show();
+  }
+
+  document.querySelectorAll('.subject-card').forEach((card) => {
+    card.addEventListener('click', () => openAttendanceModal(card));
+    card.addEventListener('keydown', (e) => {
+      if (e.target !== card) return;
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        openAttendanceModal(card);
+      }
     });
+  });
+
+  document.querySelectorAll('[data-manage-subject]').forEach((btn) => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      openManageSubjectModal(btn.closest('.subject-card'));
+    });
+  });
+
+  exportDateFilter.addEventListener('change', updateExportHref);
+
+  exportDateGroup.addEventListener('click', (e) => {
+    if (e.target === exportDateFilter) return;
+    if (typeof exportDateFilter.showPicker === 'function') {
+      exportDateFilter.showPicker();
+    } else {
+      exportDateFilter.focus();
+    }
   });
 
   cameraToggleBtn.addEventListener('click', () => {
@@ -232,4 +317,9 @@ document.addEventListener('DOMContentLoaded', () => {
   attendanceModalEl.addEventListener('hidden.bs.modal', () => {
     stopCamera();
   });
+
+  if (window.REOPEN_SUBJECT_ID) {
+    const card = document.querySelector(`.subject-card[data-subject-id="${window.REOPEN_SUBJECT_ID}"]`);
+    if (card) openManageSubjectModal(card);
+  }
 });
