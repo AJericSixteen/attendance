@@ -253,11 +253,11 @@ unset($_SESSION['reopen_subject_id']);
                 <div class="row g-2 align-items-end">
                   <div class="col-sm-5">
                     <label class="form-label" for="manualStudentNumber">Student Number</label>
-                    <input type="text" class="form-control" id="manualStudentNumber" placeholder="06-2526-001648" inputmode="numeric" maxlength="14">
+                    <input type="text" class="form-control" id="manualStudentNumber" placeholder="06-2026-123456" inputmode="numeric" maxlength="14">
                   </div>
                   <div class="col-sm-5">
                     <label class="form-label" for="manualSurname">Surname</label>
-                    <input type="text" class="form-control text-uppercase" id="manualSurname" placeholder="e.g. SERRANO">
+                    <input type="text" class="form-control text-uppercase" id="manualSurname" placeholder="e.g. Dela Cruz">
                   </div>
                   <div class="col-sm-2">
                     <button type="button" class="btn btn-primary-gradient w-100" id="manualSaveBtn">Add</button>
