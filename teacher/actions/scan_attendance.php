@@ -40,7 +40,7 @@ if (count($parts) !== 2 || trim($parts[0]) === '' || trim($parts[1]) === '') {
 }
 
 $studentNumber = trim($parts[0]);
-$surname       = trim($parts[1]);
+$surname       = strtoupper(trim($parts[1]));
 
 // A student can only be marked present once per subject per day.
 $dupCheck = $pdo->prepare('
