@@ -21,6 +21,7 @@ CREATE TABLE IF NOT EXISTS subjects (
     section VARCHAR(50) NOT NULL,
     is_active TINYINT(1) NOT NULL DEFAULT 1,
     is_deleted TINYINT(1) NOT NULL DEFAULT 0,
+    sort_order INT NOT NULL DEFAULT 0,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (teacher_id) REFERENCES users(id) ON DELETE CASCADE
 );
@@ -47,6 +48,28 @@ SET @preparedStatement = (SELECT IF(
 PREPARE alterIfNotExists FROM @preparedStatement;
 EXECUTE alterIfNotExists;
 DEALLOCATE PREPARE alterIfNotExists;
+
+SET @preparedStatement = (SELECT IF(
+    (SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = @dbname AND TABLE_NAME = 'subjects' AND COLUMN_NAME = 'sort_order') > 0,
+    'SELECT 1',
+    'ALTER TABLE subjects ADD COLUMN sort_order INT NOT NULL DEFAULT 0'
+));
+PREPARE alterIfNotExists FROM @preparedStatement;
+EXECUTE alterIfNotExists;
+DEALLOCATE PREPARE alterIfNotExists;
+
+-- Give any pre-existing rows (sort_order still at its default of 0) a stable manual
+-- order matching what they used to see (active first, newest first), so nothing
+-- visibly reshuffles the first time a teacher opens the dashboard after this update.
+-- New subjects and drag-reordering (see teacher/actions/reorder_subjects.php) always
+-- write sort_order >= 1, so this only ever touches rows that have never been ordered.
+UPDATE subjects s
+JOIN (
+    SELECT id, ROW_NUMBER() OVER (PARTITION BY teacher_id ORDER BY is_active DESC, created_at DESC) AS rn
+    FROM subjects
+) ranked ON ranked.id = s.id
+SET s.sort_order = ranked.rn
+WHERE s.sort_order = 0;
 
 CREATE TABLE IF NOT EXISTS attendance (
     id INT AUTO_INCREMENT PRIMARY KEY,

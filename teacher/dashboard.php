@@ -13,7 +13,7 @@ $stmt = $pdo->prepare('
     LEFT JOIN attendance a ON a.subject_id = s.id
     WHERE s.teacher_id = ? AND s.is_deleted = 0
     GROUP BY s.id
-    ORDER BY s.is_active DESC, s.created_at DESC
+    ORDER BY s.sort_order ASC, s.created_at DESC
 ');
 $stmt->execute([$_SESSION['user_id']]);
 $subjects = $stmt->fetchAll();
@@ -220,15 +220,27 @@ unset($_SESSION['reopen_subject_id']);
             <div class="col-md-5" id="cameraColumn">
               <div class="d-flex justify-content-between align-items-center mb-2">
                 <span class="fw-semibold small">Camera</span>
-                <button type="button" class="camera-toggle-btn" id="cameraToggleBtn" aria-label="Turn camera on">
-                  <i class="bi bi-camera-video-off"></i>
-                </button>
+                <div class="d-flex gap-2">
+                  <button type="button" class="camera-toggle-btn d-none" id="torchToggleBtn" aria-label="Toggle flashlight">
+                    <i class="bi bi-lightning-charge-fill"></i>
+                  </button>
+                  <div class="camera-toggle-wrap dropdown">
+                    <button type="button" class="camera-toggle-btn" id="cameraToggleBtn" aria-label="Turn camera on">
+                      <i class="bi bi-camera-video-off"></i>
+                    </button>
+                    <button type="button" class="camera-source-caret d-none" id="cameraSourceCaret" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Choose camera source" title="Choose camera source">
+                      <i class="bi bi-chevron-down"></i>
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end camera-source-menu" id="cameraSourceMenu"></ul>
+                  </div>
+                </div>
               </div>
               <div class="camera-frame" id="cameraFrame">
                 <video id="cameraVideo" autoplay playsinline muted></video>
                 <p class="camera-hint d-none" id="cameraError">Camera access is required. Please allow camera permission on your PC or phone.</p>
                 <p class="camera-hint d-none" id="cameraOffMessage">Camera is off.</p>
               </div>
+              <p class="camera-tip" id="cameraTip">Laptop webcams are usually fixed-focus &mdash; hold the QR code steady about 15&ndash;25cm from the camera in good lighting for the sharpest read.</p>
               <canvas id="cameraCanvas" class="d-none"></canvas>
               <div id="scanStatus" class="scan-status scan-status--info">Point a student's QR code at the camera.</div>
             </div>
@@ -240,10 +252,11 @@ unset($_SESSION['reopen_subject_id']);
                       <th>#</th>
                       <th>Student Number</th>
                       <th>Surname</th>
+                      <th class="text-end">Actions</th>
                     </tr>
                   </thead>
                   <tbody id="attendanceTableBody">
-                    <tr><td colspan="3" class="text-muted">Loading...</td></tr>
+                    <tr><td colspan="4" class="text-muted">Loading...</td></tr>
                   </tbody>
                 </table>
               </div>
@@ -291,7 +304,7 @@ unset($_SESSION['reopen_subject_id']);
     window.REOPEN_SUBJECT_ID = <?= $reopenSubjectId !== null ? (int) $reopenSubjectId : 'null' ?>;
     window.DIFY_CHAT_ENDPOINT = '../includes/dify_chat.php';
   </script>
-  <script src="../assets/js/teacher.js"></script>
+  <script src="../assets/js/teacher.js?v=<?= filemtime(__DIR__ . '/../assets/js/teacher.js') ?>"></script>
   <script src="../assets/js/chatbot.js"></script>
 </body>
 </html>

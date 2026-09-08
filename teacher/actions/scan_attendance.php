@@ -35,7 +35,12 @@ if (!$subject['is_active']) {
 $parts = explode('_', $qrText, 2);
 if (count($parts) !== 2 || trim($parts[0]) === '' || trim($parts[1]) === '') {
     http_response_code(422);
-    echo json_encode(['success' => false, 'message' => 'Unrecognized QR code format.']);
+    echo json_encode([
+        'success'         => false,
+        'message'         => 'Unrecognized QR code format.',
+        'raw_qr_text'     => $qrText,
+        'expected_format' => 'StudentNumber_SURNAME (e.g. 06-2026-123456_DELACRUZ)',
+    ]);
     exit;
 }
 

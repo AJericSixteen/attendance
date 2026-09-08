@@ -64,8 +64,11 @@ foreach (['A', 'B', 'C', 'D'] as $col) {
     $sheet->getColumnDimension($col)->setAutoSize(true);
 }
 
-$fileNameDateSuffix = $dateFilter !== '' ? '_' . $dateFilter : '';
-$fileName = preg_replace('/[^A-Za-z0-9_-]+/', '_', $subject['subject_code']) . '_attendance' . $fileNameDateSuffix . '.xlsx';
+$fileNameDate = $dateFilter !== '' ? $dateFilter : date('Y-m-d');
+$fileNameParts = [$subject['subject_code'], $subject['subject_name'], $subject['section'], 'attendance', $fileNameDate];
+$fileName = implode('_', array_map(function ($part) {
+    return preg_replace('/[^A-Za-z0-9]+/', '_', trim($part));
+}, $fileNameParts)) . '.xlsx';
 
 header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
 header('Content-Disposition: attachment;filename="' . $fileName . '"');

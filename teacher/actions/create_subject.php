@@ -18,8 +18,12 @@ if ($code === '' || $name === '' || $section === '') {
     exit;
 }
 
-$stmt = $pdo->prepare('INSERT INTO subjects (teacher_id, subject_code, subject_name, section) VALUES (?, ?, ?, ?)');
-$stmt->execute([$_SESSION['user_id'], $code, $name, $section]);
+$orderStmt = $pdo->prepare('SELECT COALESCE(MAX(sort_order), 0) + 1 FROM subjects WHERE teacher_id = ?');
+$orderStmt->execute([$_SESSION['user_id']]);
+$nextOrder = (int) $orderStmt->fetchColumn();
+
+$stmt = $pdo->prepare('INSERT INTO subjects (teacher_id, subject_code, subject_name, section, sort_order) VALUES (?, ?, ?, ?, ?)');
+$stmt->execute([$_SESSION['user_id'], $code, $name, $section, $nextOrder]);
 
 $_SESSION['flash'] = ['type' => 'success', 'message' => "Subject \"$name\" created."];
 header('Location: ../dashboard.php');

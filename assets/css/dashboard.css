@@ -141,6 +141,33 @@ body {
   outline-offset: 2px;
 }
 
+/* Press-and-hold drag reordering, iOS-style */
+.subject-card {
+  touch-action: none;
+}
+
+.subject-card.is-dragging {
+  position: fixed;
+  z-index: 2000;
+  pointer-events: none;
+  transition: none;
+  transform: scale(1.05);
+  box-shadow: 0 20px 45px rgba(0, 0, 0, 0.35);
+  cursor: grabbing;
+  user-select: none;
+}
+
+.card-grid.is-reordering .subject-card:not(.is-dragging) {
+  cursor: grabbing;
+}
+
+.subject-card-placeholder {
+  border: 2px dashed var(--border);
+  border-radius: 18px;
+  background: var(--surface-2);
+  opacity: 0.6;
+}
+
 .manage-subject-btn {
   position: absolute;
   top: 10px;
@@ -353,6 +380,17 @@ body {
   padding: 0 20px;
 }
 
+.camera-tip {
+  margin: 8px 0 0;
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+.camera-tip--error {
+  color: var(--danger);
+  font-weight: 600;
+}
+
 .alert-flash {
   max-width: 1200px;
   margin: 20px auto 0;
@@ -414,6 +452,67 @@ body {
   background: var(--primary);
   border-color: var(--primary);
   color: #ffffff;
+}
+
+.camera-toggle-wrap {
+  position: relative;
+  display: inline-flex;
+}
+
+.camera-source-caret {
+  position: absolute;
+  right: -3px;
+  bottom: -3px;
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  border-radius: 50%;
+  border: 1.5px solid var(--border);
+  background: var(--surface);
+  color: var(--text-muted);
+  font-size: 9px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+
+.camera-source-caret:hover,
+.camera-source-caret[aria-expanded="true"] {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: #ffffff;
+}
+
+.camera-source-menu {
+  min-width: 240px;
+  font-size: 13px;
+  padding: 6px;
+}
+
+.camera-source-menu .dropdown-item {
+  border-radius: 6px;
+  padding: 6px 10px;
+  white-space: normal;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.camera-source-menu .dropdown-item i {
+  visibility: hidden;
+  color: var(--primary);
+}
+
+.camera-source-menu .dropdown-item.active {
+  background: var(--primary-soft);
+  color: var(--primary);
+  font-weight: 600;
+}
+
+.camera-source-menu .dropdown-item.active i {
+  visibility: visible;
 }
 
 .manual-entry-box {
