@@ -27,6 +27,7 @@ IMPORTANT:
 - Keep TEST_MODE=True while testing.
 """
 
+import subprocess
 import time
 import tkinter as tk
 from tkinter import filedialog
@@ -42,7 +43,7 @@ from playwright.sync_api import sync_playwright, TimeoutError as PlaywrightTimeo
 
 # True = pause after every student so you can verify the entry.
 # False = continue automatically.
-TEST_MODE = False
+TEST_MODE = True
 
 WAIT_AFTER_UPDATE = 0.3
 
@@ -52,6 +53,49 @@ WAIT_AFTER_UPDATE = 0.3
 # column 2 = Student Name, ... If your SIS table is laid out
 # differently, change this number.
 ID_COLUMN_INDEX = 1
+
+# Port the manually-launched Edge browser exposes for remote debugging.
+# The script attaches to that browser instead of launching its own, so
+# Cloudflare sees a normal, human-driven browser during login.
+CDP_PORT = 9222
+
+EDGE_PROFILE_DIR = str(Path.home() / ".sis_manual_edge_profile")
+
+EDGE_EXE_CANDIDATES = [
+    r"C:\Program Files\Microsoft\Edge\Application\msedge.exe",
+    r"C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe",
+]
+
+
+def find_edge_exe():
+    for candidate in EDGE_EXE_CANDIDATES:
+        if Path(candidate).exists():
+            return candidate
+
+    return "msedge.exe"
+
+
+def launch_edge_for_manual_login(sis_url):
+    """
+    Start a normal (non-Playwright-controlled) Edge window on a
+    separate profile, already pointed at the SIS URL, with remote
+    debugging enabled so the script can attach to it later. Edge
+    itself launches this exactly like a desktop shortcut would, so
+    nothing here is visible to Cloudflare as automation.
+    """
+
+    edge_exe = find_edge_exe()
+
+    subprocess.Popen(
+        [
+            edge_exe,
+            f"--remote-debugging-port={CDP_PORT}",
+            f"--user-data-dir={EDGE_PROFILE_DIR}",
+            sis_url,
+        ],
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+    )
 
 
 # =========================
@@ -516,18 +560,73 @@ def main():
         return
 
     # ---------------------------------
-    # Open SIS
+    # Manual SIS login (in a real, human-launched Edge window)
     # ---------------------------------
+    #
+    # SIS is protected by Cloudflare, which flags any browser that
+    # Playwright launches and controls from the start (it detects the
+    # DevTools Protocol connection itself, not just automation flags).
+    # To avoid that, YOU start Edge normally with remote debugging
+    # enabled, log in and pass the Cloudflare check yourself, and the
+    # script then attaches to that already-open, already-verified
+    # browser only to read the roster and click checkboxes.
+
+    print()
+    print("=" * 65)
+    print("                         SIS LOGIN")
+    print("=" * 65)
+    print()
+    print("IMPORTANT: close every open Edge window first (this uses a")
+    print("separate profile, but Edge ignores that if it's already running).")
+    print()
+    input("Press ENTER once all Edge windows are closed...")
+
+    print()
+    print("Opening Edge...")
+
+    launch_edge_for_manual_login(sis_url)
+
+    print()
+    print("In the Edge window that just opened:")
+    print("1. Log in and pass the Cloudflare check yourself.")
+    print("2. Navigate to Attendance By Faculty, and select the correct")
+    print("   Date and Subject so the checkboxes are visible.")
+    print("3. Return to this window.")
+    print()
+
+    input(
+        "Press ENTER once the SIS attendance page is ready in Edge..."
+    )
 
     with sync_playwright() as p:
 
-        browser = p.chromium.launch(
-            headless=False
+        try:
+            browser = p.chromium.connect_over_cdp(
+                f"http://localhost:{CDP_PORT}"
+            )
+        except Exception as e:
+            print()
+            print(f"Could not connect to Edge on port {CDP_PORT}: {e}")
+            print(
+                "Make sure Edge is still running and was started with "
+                "the --remote-debugging-port flag shown above."
+            )
+            input("Press ENTER to close...")
+            return
+
+        context = (
+            browser.contexts[0] if browser.contexts else browser.new_context()
         )
 
-        context = browser.new_context()
+        page = None
 
-        page = context.new_page()
+        for candidate in context.pages:
+            if candidate.url.startswith(sis_url.split("?")[0][:40]):
+                page = candidate
+                break
+
+        if page is None:
+            page = context.pages[0] if context.pages else context.new_page()
 
         # Handle JS dialogs (alert/confirm/beforeunload) ourselves.
         # Without an explicit handler, Playwright's default auto-dismiss
@@ -537,34 +636,6 @@ def main():
             dialog.dismiss()
 
         page.on("dialog", handle_dialog)
-
-        print()
-        print("Opening SIS...")
-
-        page.goto(
-            sis_url,
-            wait_until="domcontentloaded",
-        )
-
-        # ---------------------------------
-        # Manual SIS login
-        # ---------------------------------
-
-        print()
-        print("=" * 65)
-        print("                         SIS LOGIN")
-        print("=" * 65)
-        print()
-        print("1. Log into SIS manually.")
-        print("2. Navigate to Attendance By Faculty.")
-        print("3. Select the correct Date and Subject.")
-        print("4. Make sure the student attendance checkboxes are visible.")
-        print("5. Return to this PowerShell window.")
-        print()
-
-        input(
-            "Press ENTER when the SIS page is ready..."
-        )
 
         # ---------------------------------
         # Find roster rows
@@ -580,8 +651,7 @@ def main():
                 "Could not find the attendance table on this page or in "
                 "any of its iframes (no 'Student Id' header found)."
             )
-            input("Press ENTER to close the browser...")
-            browser.close()
+            input("Press ENTER to close this window...")
             return
 
         print("Reading student roster from SIS...")
@@ -593,8 +663,7 @@ def main():
                 "Could not find any student rows below the "
                 "'Student Id' header."
             )
-            input("Press ENTER to close the browser...")
-            browser.close()
+            input("Press ENTER to close this window...")
             return
 
         print(f"Found {len(data_rows)} row(s) on the SIS page.")
@@ -721,12 +790,15 @@ def main():
         )
 
         print()
+        print(
+            "The script is done. Edge stays open so you can review and "
+            "click Submit yourself; close it manually when finished."
+        )
+        print()
 
         input(
-            "Press ENTER to close the browser..."
+            "Press ENTER to close this window..."
         )
-
-        browser.close()
 
 
 if __name__ == "__main__":
